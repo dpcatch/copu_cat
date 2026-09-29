@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="copu_cat.png" alt="copu_cat logo" width="300">
+</p>
+
 # copu_cat
 
 Match simulated (injected) galactic binaries to the sources recovered by a LISA global fit, without
