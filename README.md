@@ -6,6 +6,7 @@
 
 Match simulated (injected) galactic binaries to the sources recovered by a LISA global fit, without
 knowing in advance which is which, and measure the **purity** and **completeness** of the catalog.
+**Based on [project_catalog](https://github.com/jkanner/project-catalog)**
 
 For every recovered source (a posterior from the global fit) and every injection close to it in
 frequency, copu_cat computes where the injection falls inside the posterior (highest-density-region
