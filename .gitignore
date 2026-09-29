@@ -1,0 +1,21 @@
+# data, results and plots are produced locally and not tracked
+data/
+results/
+plots/
+*.npy
+*.h5
+*.hdf5
+*.feather
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.pytest_cache/
+
+# notebooks / OS
+.ipynb_checkpoints/
+.DS_Store

@@ -1,0 +1,68 @@
+[project]
+name = "copu_cat"
+version = "0.1.0"
+description = "Match injections to global-fit posteriors and measure the purity and completeness of LISA galactic-binary catalogs"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.13"          # required by lisa-global-fit
+dependencies = [
+    "numpy>=2,<2.4",                 # same bound as lisa-global-fit
+    "scipy",
+    "pandas",
+    "pyarrow",                       # feather files
+    "tables",                        # pandas HDF5 (injection catalog)
+    "h5py",
+    "matplotlib",
+    "corner",
+    "tqdm",
+    # HDRs
+    "KDEpy",
+    "jax",
+    "coppuccino",
+    # global fit: waveforms and noise model for the SNR (lisa-gf-noise comes with lisa-global-fit)
+    "lisa-global-fit @ git+https://gitlab.in2p3.fr/lisa-apc/global-fit.git",
+    "backgrounds @ git+https://gitlab.in2p3.fr/qbaghi/backgrounds.git",
+    "typed-lisa-toolkit[jax]>=0.7.4",
+]
+
+[project.scripts]
+copu-cat-convert-injections = "copu_cat.cli.convert_injections:main"
+copu-cat-convert-posteriors = "copu_cat.cli.convert_posteriors:main"
+copu-cat-find-candidates = "copu_cat.cli.find_candidates:main"
+copu-cat-hdrs = "copu_cat.cli.hdrs:main"
+copu-cat-combine-hdrs = "copu_cat.cli.combine_hdrs:main"
+copu-cat-snr = "copu_cat.cli.snr:main"
+
+[dependency-groups]
+dev = ["ipykernel", "pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["copu_cat"]
+
+[tool.hatch.metadata]
+allow-direct-references = true      # git dependencies above
+
+[tool.uv]
+# coppuccino 1.0.0 declares jax<0.8, but the global-fit stack uses newer jax, and coppuccino
+# has been checked to work with jax 0.11. Lift its upper bound.
+override-dependencies = ["jax>=0.8", "jaxlib>=0.8"]
+
+[tool.uv.sources]
+# Same sources as lisa-global-fit uses (uv does not take them over from dependencies).
+typed-lisa-toolkit = { git = "https://gitlab.in2p3.fr/lisa-apc/typed-lisa-toolkit.git", tag = "0.7.4" }
+jexplore = { index = "jexplore" }
+geemoo-priors = { index = "geemoo-priors" }
+
+[[tool.uv.index]]
+name = "jexplore"
+url = "https://gitlab.in2p3.fr/api/v4/projects/33918/packages/pypi/simple"
+explicit = true
+
+[[tool.uv.index]]
+name = "geemoo-priors"
+url = "https://gitlab.in2p3.fr/api/v4/projects/39469/packages/pypi/simple"
+explicit = true
