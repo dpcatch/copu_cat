@@ -12,7 +12,7 @@ For every recovered source (a posterior from the global fit) and every injection
 frequency, copu_cat computes where the injection falls inside the posterior (highest-density-region
 level, "HDR", in 1D and 6D/8D). An injection *matches* a posterior when it lies inside its credible
 region. A one-to-one assignment then pairs each posterior with at most one injection, either
-greedily by SNR (as in the paper draft) or by the lowest total 6D HDR.
+greedily by SNR or by the lowest total 6D HDR (user's choice).
 
 ## Installation
 
