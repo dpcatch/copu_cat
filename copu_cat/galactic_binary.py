@@ -22,19 +22,21 @@ class GalacticBinary:
     """
     Container for a posterior chain samples and their corresponding possible injection matches.
     """
-    def __init__(self, name: str, posterior: pd.DataFrame, injections: pd.DataFrame):
+    def __init__(self, name: str, posterior: pd.DataFrame, injections: pd.DataFrame, silent: bool = False):
         self.name = name
         self.posterior = posterior
         self.injections = injections
         self.binary_params = binary_parameters
-        print(f"Loaded {self.name} with {len(self.posterior)} samples and {len(self.injections)} possible injection matches.")
+        if not silent:
+            print(f"Loaded {self.name} with {len(self.posterior)} samples and {len(self.injections)} possible injection matches.")
 
     @classmethod
     def load_feather(cls,
                      name: str,
                      posterior_dir: Path|None = None,
                      injections_dir: Path|None = None,
-                     data_dir: Path|None = None):
+                     data_dir: Path|None = None, 
+                     silent: bool = False):
         """
         Load posterior samples and possible injection matches (SNR > 1) from Feather files.
         name : base name (e.g. 'LDC0017720857')
@@ -64,7 +66,7 @@ class GalacticBinary:
 
         # Wrap the polarization angle of injections to be between 0 and pi (to match posterior prior)
         injections_df = wrap_polarization_angle(injections_df)
-        return cls(name, posterior_df, injections_df)
+        return cls(name, posterior_df, injections_df, silent=silent)
 
     def save_feathers(self,
                       posterior_dir: str,

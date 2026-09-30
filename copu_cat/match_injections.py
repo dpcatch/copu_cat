@@ -5,7 +5,7 @@ from copu_cat.galactic_binary import GalacticBinary
 
 
 def get_all_matches(hdrs: pd.DataFrame, threshold: float = 0.89, names: list | None = None,
-                    data_dir=None):
+                    data_dir=None, silent: bool = False):
     """
     Iterate through all galactic binaries and check which injections have matches to posteriors based on HDR values.
 
@@ -28,7 +28,7 @@ def get_all_matches(hdrs: pd.DataFrame, threshold: float = 0.89, names: list | N
 
     for name in tqdm(names):
         matches[name] = []
-        gb = GalacticBinary.load_feather(name, data_dir=data_dir)
+        gb = GalacticBinary.load_feather(name, data_dir=data_dir, silent=silent)
         for injection_index in range(len(gb.injections)):
             if check_injection_match(gb, injection_index, hdrs, threshold=threshold):
                 matches[name].append(gb.injections["Name"].iloc[injection_index])
