@@ -106,6 +106,8 @@ Notes:
   `posterior_index.csv` also keeps Erebor's `source_id`, sample count and detection statistic.
 - **Step 4** is the slow one. It can be resumed (existing files are skipped) and split into
   independent ranges that run in parallel, e.g. `copu-cat-hdrs --start 0 --stop 1000`.
+  It computes the 1D and 6D HDRs; the 8D HDR (a second flow fit per source, not used by the
+  notebooks) only with `--with-8d`, otherwise its column is NaN.
   Step 5 can be run at any time for a preview.
   On a Slurm cluster, `slurm/hdrs.sbatch` runs it as a job array (submission command in the
   script). It needs only `posterior_chains/` and `injection_matches/` from the data directory, and

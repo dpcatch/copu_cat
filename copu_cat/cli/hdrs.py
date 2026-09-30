@@ -1,5 +1,11 @@
 """
-Step 4: compute the 1D, 6D and 8D HDRs of every candidate injection of every recovered source.
+Step 4: compute the 1D and 6D HDRs (and optionally the 8D HDR) of every candidate injection of
+every recovered source.
+
+The 6D HDR (all parameters except Initial Phase and Polarization) is the one used for matching. The
+8D HDR needs a second flow fit per source, roughly doubling the run time, and is not used downstream,
+so it is off by default: `--with-8d` turns it on. Without it the '8D HDR' column is NaN, so the files
+keep the same columns either way.
 
 Output: <data-dir>/hdrs/hdrs_<Name>.feather, one per source (sources without candidates are
 skipped). Re-running skips sources that already have a file, so an interrupted run can be resumed,
@@ -8,6 +14,7 @@ and disjoint ranges (--start/--stop) can run in parallel.
 Usage:
     copu-cat-hdrs                      # all sources
     copu-cat-hdrs --start 0 --stop 100
+    copu-cat-hdrs --with-8d            # also the 8D HDR
 """
 import pandas as pd
 from copu_cat.utils import get_galactic_binary_names
@@ -21,7 +28,7 @@ from tqdm import tqdm
 from copu_cat import config
 
 def get_hdrs(gb_index: int, plot_dir: str|None = None, names: list|None = None,
-             results_dir: Path|None = None, data_dir=None) -> pd.DataFrame:
+             results_dir: Path|None = None, data_dir=None, with_8d: bool = False) -> pd.DataFrame:
     print(f'Computing HDRs for GB index {gb_index}')
     if names is None:
         names = get_galactic_binary_names(data_dir=data_dir)
@@ -47,7 +54,10 @@ def get_hdrs(gb_index: int, plot_dir: str|None = None, names: list|None = None,
         hdr_data['Name'].append(gb.name)
         hdr_data['Candidate'].append(gb.injections.iloc[i]['Name'])
         hdr_data['SNR'].append(gb.injections.iloc[i]['SNR'])
-    hdr_8d = compute_8d_hdr_all_injections(gb, plot_dir=plot_dir)
+    if with_8d:
+        hdr_8d = compute_8d_hdr_all_injections(gb, plot_dir=plot_dir)
+    else:
+        hdr_8d = [float('nan')] * gb.injections.shape[0]
     for i in range(gb.injections.shape[0]):
         hdr_data['8D HDR'].append(hdr_8d[i])
     hdr_6d = compute_6d_hdr_all_injections(gb, plot_dir=plot_dir)
@@ -61,13 +71,15 @@ def get_hdrs(gb_index: int, plot_dir: str|None = None, names: list|None = None,
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description='Compute 1D, 6D and 8D HDRs for every posterior and its candidate injections.')
+    ap = argparse.ArgumentParser(description='Compute 1D and 6D (optionally 8D) HDRs for every posterior and its candidate injections.')
     ap.add_argument('--start', type=int, default=0, help='first source index (inclusive)')
     ap.add_argument('--stop', type=int, default=None, help='last source index (exclusive); default: all')
     ap.add_argument('--data-dir', default=None, help='data directory (default: $COPU_CAT_DATA_DIR or ./data)')
     ap.add_argument('--results-dir', default=None, help='where to write the HDR files (default: <data-dir>/hdrs)')
     ap.add_argument('--plot-dir', default=None, help='save corner plots here (off by default)')
     ap.add_argument('--overwrite', action='store_true', help='recompute sources that already have an output file')
+    ap.add_argument('--with-8d', action='store_true',
+                    help='also compute the 8D HDR (a second flow fit per source; not used downstream)')
     args = ap.parse_args(argv)
 
     data_dir = config.get_data_dir(args.data_dir)
@@ -89,7 +101,8 @@ def main(argv=None):
             skipped_empty.append(name)
             continue
         try:
-            get_hdrs(index, plot_dir=args.plot_dir, names=names, results_dir=results_dir, data_dir=data_dir)
+            get_hdrs(index, plot_dir=args.plot_dir, names=names, results_dir=results_dir, data_dir=data_dir,
+                     with_8d=args.with_8d)
         except Exception as err:  # keep going; report at the end
             print(f'FAILED {name}: {err!r}')
             failed.append(name)

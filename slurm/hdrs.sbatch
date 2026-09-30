@@ -5,7 +5,7 @@
 #
 # Submit from the copu_cat root (after `uv sync`), with one array task per CHUNK sources:
 #
-#   export DATA_DIR=/path/to/erebor_0626 CHUNK=50
+#   export DATA_DIR=/path/to/erebor_0626 CHUNK=40
 #   N=$(ls $DATA_DIR/posterior_chains/*_posterior.feather | wc -l)
 #   mkdir -p logs && sbatch --array=0-$(( (N + CHUNK - 1) / CHUNK - 1 ))%50 slurm/hdrs.sbatch
 #
@@ -16,9 +16,10 @@
 # Adjust the #SBATCH lines (partition/account, time, memory) to your cluster.
 
 #SBATCH --job-name=copu-cat-hdrs
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
-#SBATCH --time=12:00:00
+#SBATCH --cpus-per-task=2          # measured: ~1.7 cores busy on average
+#SBATCH --ntasks=1
+#SBATCH --mem-per-cpu=2G          # some clusters (e.g. Euler) reject --mem
+#SBATCH --time=01:00:00           # CHUNK=40 sources x ~20-25 s each (6D only; ~45 s with --with-8d)
 #SBATCH --output=logs/hdrs_%A_%a.out
 ##SBATCH --partition=...
 ##SBATCH --account=...
@@ -26,7 +27,7 @@
 set -euo pipefail
 
 : "${DATA_DIR:?set DATA_DIR to the data directory (with posterior_chains/ and injection_matches/)}"
-CHUNK=${CHUNK:-50}
+CHUNK=${CHUNK:-40}
 START=$(( SLURM_ARRAY_TASK_ID * CHUNK ))
 STOP=$(( START + CHUNK ))
 
@@ -37,6 +38,8 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export OPENBLAS_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export MKL_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export XLA_FLAGS="--xla_force_host_platform_device_count=1"
+# CPU only (the flows are small; a GPU gains little). Also silences the "CUDA-enabled jaxlib is not installed" warning.
+export JAX_PLATFORMS=cpu
 
 echo "task $SLURM_ARRAY_TASK_ID: sources [$START, $STOP) of $DATA_DIR on $(hostname)"
 .venv/bin/copu-cat-hdrs --data-dir "$DATA_DIR" --start "$START" --stop "$STOP"
