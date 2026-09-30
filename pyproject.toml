@@ -23,11 +23,25 @@ dependencies = [
     "lisa-global-fit @ git+https://gitlab.in2p3.fr/lisa-apc/global-fit.git",
     "backgrounds @ git+https://gitlab.in2p3.fr/qbaghi/backgrounds.git",
     "typed-lisa-toolkit[jax]>=0.7.4",
+    # lisaanalysistools points mojito-processor at TestPyPI (only <=0.4.2 there); lisa-global-fit
+    # needs >=0.6.3 from PyPI. Declared here so the PyPI source below wins.
+    "mojito-processor>=0.6.3",
+]
+
+[project.optional-dependencies]
+# Erebor noise model (lisa_gf_noise.erebor), only needed for `copu-cat-snr --noise-model erebor`.
+# Compiles gpubackendtools and lisaanalysistools (see README). Install with `uv sync --extra erebor`.
+erebor = [
+    "lisa-gf-noise[erebor]",
+    # lisaanalysistools imports gbgpu when loading lisatools.globalfit.postprocessing (which the Erebor
+    # noise model uses) but does not declare it. Only the import is needed; the PyPI wheel avoids a build.
+    "gbgpu>=1.2.4",
 ]
 
 [project.scripts]
 copu-cat-convert-injections = "copu_cat.cli.convert_injections:main"
 copu-cat-convert-posteriors = "copu_cat.cli.convert_posteriors:main"
+copu-cat-convert-erebor-posteriors = "copu_cat.cli.convert_erebor_posteriors:main"
 copu-cat-find-candidates = "copu_cat.cli.find_candidates:main"
 copu-cat-hdrs = "copu_cat.cli.hdrs:main"
 copu-cat-combine-hdrs = "copu_cat.cli.combine_hdrs:main"
@@ -49,13 +63,27 @@ allow-direct-references = true      # git dependencies above
 [tool.uv]
 # coppuccino 1.0.0 declares jax<0.8, but the global-fit stack uses newer jax, and coppuccino
 # has been checked to work with jax 0.11. Lift its upper bound.
-override-dependencies = ["jax>=0.8", "jaxlib>=0.8"]
+# lisa-gf-noise[erebor] pins LISAanalysistools v1.2.8.post1, which cannot read the metadata of
+# Erebor v4 runs (galactic_grid_kwargs and average_transfer_functions arrived in post2); post3 is
+# the last release before the CDL1run1_erebor_v4 runs. The same extra wants Erebor's Eryn fork,
+# while lisa-global-fit asks for eryn from PyPI; use the fork for both.
+override-dependencies = [
+    "jax>=0.8", "jaxlib>=0.8",
+    "lisaanalysistools @ git+https://github.com/Erebor-L2D/LISAanalysistools@v1.2.8.post3",
+    "eryn @ git+https://github.com/Erebor-L2D/Eryn@cdl1-run0",
+    # replaces lisaanalysistools' own mojito-processor requirement, which pins it to TestPyPI
+    # (only <=0.4.2 there); with the source below it comes from PyPI for everyone
+    "mojito-processor>=0.6.3",
+]
 
 [tool.uv.sources]
 # Same sources as lisa-global-fit uses (uv does not take them over from dependencies).
 typed-lisa-toolkit = { git = "https://gitlab.in2p3.fr/lisa-apc/typed-lisa-toolkit.git", tag = "0.7.4" }
 jexplore = { index = "jexplore" }
 geemoo-priors = { index = "geemoo-priors" }
+# same branch lisa-global-fit uses; declared here to enable its [erebor] extra
+lisa-gf-noise = { git = "https://gitlab.com/lisamission/gf-noise-models.git", branch = "geemoo" }
+mojito-processor = { index = "pypi" }
 
 [[tool.uv.index]]
 name = "jexplore"
@@ -65,4 +93,9 @@ explicit = true
 [[tool.uv.index]]
 name = "geemoo-priors"
 url = "https://gitlab.in2p3.fr/api/v4/projects/39469/packages/pypi/simple"
+explicit = true
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
 explicit = true
